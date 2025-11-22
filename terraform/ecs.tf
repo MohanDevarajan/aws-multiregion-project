@@ -11,6 +11,7 @@ resource "aws_cloudwatch_log_group" "app_primary" {
   name              = "/ecs/${var.project_name}-${var.env}-primary"
   retention_in_days = 7
 }
+
 resource "aws_cloudwatch_log_group" "app_secondary" {
   provider          = aws.secondary
   name              = "/ecs/${var.project_name}-${var.env}-secondary"
@@ -44,14 +45,13 @@ resource "aws_ecs_task_definition" "app_primary" {
 }
 
 resource "aws_ecs_task_definition" "app_secondary" {
-  provider = aws.secondary
-  family   = "${var.project_name}-${var.env}"
-  requires_compatibilities = ["FARGATE"
-  ]
-  network_mode       = "awsvpc"
-  cpu                = 256
-  memory             = 512
-  execution_role_arn = aws_iam_role.ecs_task_role.arn
+  provider                 = aws.secondary
+  family                   = "${var.project_name}-${var.env}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {

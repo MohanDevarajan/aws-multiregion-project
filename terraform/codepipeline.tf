@@ -1,14 +1,6 @@
-# S3 artifact store
-resource "random_id" "suffix" {
-  byte_length = 3
-}
-
-resource "aws_s3_bucket" "artifacts" {
-  bucket        = "${var.project_name}-${var.env}-artifacts-${random_id.suffix.hex}"
-  force_destroy = true
-}
-
+# -------------------------
 # CodeBuild project
+# -------------------------
 resource "aws_codebuild_project" "build" {
   name         = "${var.project_name}-${var.env}-build"
   service_role = aws_iam_role.codebuild_role.arn
@@ -48,17 +40,20 @@ resource "aws_codebuild_project" "build" {
   source {
     type      = "GITHUB"
     location  = "https://github.com/${var.github_owner}/${var.github_repo}.git"
-    buildspec = file("${path.module}/../ci/buildspec.yaml")
+    buildspec = "ci/buildspec.yaml"
   }
 }
 
+# -------------------------
 # CodePipeline with GitHub v1 (OAuth token)
+# -------------------------
 resource "aws_codepipeline" "pipeline" {
   name     = "${var.project_name}-${var.env}-pipeline"
   role_arn = aws_iam_role.codepipeline_role.arn
 
+  # Use the artifact bucket created in s3.tf
   artifact_store {
-    location = aws_s3_bucket.artifacts.bucket
+    location = aws_s3_bucket.artifact_primary.bucket
     type     = "S3"
   }
 
@@ -112,7 +107,6 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
 
-  # Deploy via CodeBuild script (does ECS update-service in both regions)
   stage {
     name = "Deploy"
     action {

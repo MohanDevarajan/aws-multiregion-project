@@ -2,6 +2,7 @@ resource "aws_lb" "primary" {
   name               = "${var.project_name}-${var.env}-alb-primary"
   load_balancer_type = "application"
   subnets            = module.vpc_primary.public_subnets
+  security_groups    = [aws_security_group.alb_primary_sg.id]
 }
 
 resource "aws_lb_target_group" "primary" {
@@ -29,24 +30,29 @@ resource "aws_ecs_service" "primary" {
   task_definition = aws_ecs_task_definition.app_primary.arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
+
   network_configuration {
     subnets          = module.vpc_primary.public_subnets
     assign_public_ip = true
+    security_groups  = [aws_security_group.ecs_primary_sg.id]
   }
+
   load_balancer {
     target_group_arn = aws_lb_target_group.primary.arn
     container_name   = "app"
     container_port   = var.container_port
   }
+
   depends_on = [aws_lb_listener.primary_http]
 }
 
-/* Secondary ALB + service */
+# Secondary
 resource "aws_lb" "secondary" {
   provider           = aws.secondary
   name               = "${var.project_name}-${var.env}-alb-secondary"
   load_balancer_type = "application"
   subnets            = module.vpc_secondary.public_subnets
+  security_groups    = [aws_security_group.alb_secondary_sg.id]
 }
 
 resource "aws_lb_target_group" "secondary" {
@@ -77,14 +83,18 @@ resource "aws_ecs_service" "secondary" {
   task_definition = aws_ecs_task_definition.app_secondary.arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
+
   network_configuration {
     subnets          = module.vpc_secondary.public_subnets
     assign_public_ip = true
+    security_groups  = [aws_security_group.ecs_secondary_sg.id]
   }
+
   load_balancer {
     target_group_arn = aws_lb_target_group.secondary.arn
     container_name   = "app"
     container_port   = var.container_port
   }
+
   depends_on = [aws_lb_listener.secondary_http]
 }

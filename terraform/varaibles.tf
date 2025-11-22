@@ -27,7 +27,6 @@ variable "desired_count" {
   default = 1
 }
 
-# Provide in terraform.tfvars
 variable "sns_alert_email" {
   type = string
 }
@@ -40,7 +39,7 @@ variable "github_owner" {
 
 variable "github_repo" {
   type    = string
-  default = "aws_devops"
+  default = "aws-multiregion-project"
 }
 
 variable "github_branch" {
@@ -48,8 +47,16 @@ variable "github_branch" {
   default = "main"
 }
 
-# Store in terraform.tfvars (sensitive)
 variable "github_oauth_token" {
   type      = string
   sensitive = true
+}
+
+# ECS roles passed by CodePipeline for task execution/deploy
+variable "ecs_task_execution_role_arn" {
+  type = string
+}
+
+variable "ecs_task_role_arn" {
+  type = string
 }
