@@ -1,0 +1,79 @@
+# -----------------------------
+# General
+# -----------------------------
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# VS Code
+# -----------------------------
+.vscode/
+.history/
+*.code-workspace
+
+# -----------------------------
+# Python (if your app/src uses Python)
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+env/
+venv/
+.venv/
+
+# -----------------------------
+# Node.js (if your app/src uses Node)
+# -----------------------------
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+dist/
+build/
+
+# -----------------------------
+# Docker
+# -----------------------------
+*.tar
+docker-compose.override.yml
+
+# -----------------------------
+# Terraform
+# -----------------------------
+**/.terraform/
+**/.terraform/*
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+*.tfvars.json
+crash.log
+override.tf
+override.tf.json
+terraform.rc
+
+# Sensitive override files
+*_override.tf
+*_override.tf.json
+
+# -----------------------------
+# AWS CodePipeline / CodeBuild
+# -----------------------------
+# Logs
+*.zip
+build/
+cache/
+.aws-sam/
+
+# -----------------------------
+# App folder
+# -----------------------------
+app/__pycache__/
+app/src/__pycache__/
+app/src/*.pyc
+
+# Ignore compiled artifacts
+**/*.so
+**/*.pyd
