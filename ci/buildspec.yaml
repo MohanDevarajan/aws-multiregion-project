@@ -9,6 +9,12 @@ env:
     SECONDARY_REGION: "us-east-2"
 
 phases:
+  install:
+    runtime-versions:
+      docker: 24
+    commands:
+      - echo Installing dependencies...
+
   pre_build:
     commands:
       - echo Logging in to Amazon ECR in primary region...
@@ -21,21 +27,18 @@ phases:
   build:
     commands:
       - echo Building Docker image...
-      - docker build -t app:$IMAGE_TAG src/
-      - echo Tagging image for primary region...
-      - docker tag app:$IMAGE_TAG $PRIMARY_REPO_URL:$IMAGE_TAG
-      - echo Tagging image for secondary region...
-      - docker tag app:$IMAGE_TAG $SECONDARY_REPO_URL:$IMAGE_TAG
+      - docker build -t app:$IMAGE_TAG app/
 
   post_build:
     commands:
-      - echo Pushing image to primary ECR...
+      - echo Tagging and pushing Docker image to primary ECR...
+      - docker tag app:$IMAGE_TAG $PRIMARY_REPO_URL:$IMAGE_TAG
       - docker push $PRIMARY_REPO_URL:$IMAGE_TAG
-      - echo Pushing image to secondary ECR...
+      - echo Tagging and pushing Docker image to secondary ECR...
+      - docker tag app:$IMAGE_TAG $SECONDARY_REPO_URL:$IMAGE_TAG
       - docker push $SECONDARY_REPO_URL:$IMAGE_TAG
-      - echo Forcing ECS deployment in primary region...
+      - echo Forcing new ECS deployments in both regions...
       - aws ecs update-service --region $PRIMARY_REGION --cluster ${PROJECT_NAME}-${ENV}-cluster-primary --service ${PROJECT_NAME}-${ENV}-svc-primary --force-new-deployment
-      - echo Forcing ECS deployment in secondary region...
       - aws ecs update-service --region $SECONDARY_REGION --cluster ${PROJECT_NAME}-${ENV}-cluster-secondary --service ${PROJECT_NAME}-${ENV}-svc-secondary --force-new-deployment
 
 artifacts:
