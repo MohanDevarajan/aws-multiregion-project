@@ -1,19 +1,22 @@
 version: 0.2
 
-phases: 
-    install:
-        runtime-versions:
-            nodejs: latest
-        commands:
-            - echo "installing something"
-    pre_build:
-        commands: 
-            - echo "we are in the pre build phase"
-    build:
-        commands:
-            - echo "we are in the build block"
-            - echo "we will run some tests"
-            - grep -Fq "Congratulations" index.html
-    post_build:
-        commands:
-            - echo "we are in the post build phase"
+phases:
+  install:
+    runtime-versions:
+      docker: 20
+
+  pre_build:
+    commands:
+      - "echo Hello from pre_build"
+
+  build:
+    commands:
+      - "echo Hello from build"
+
+  post_build:
+    commands:
+      - "echo Hello from post_build"
+
+artifacts:
+  files:
+    - '**/*'
