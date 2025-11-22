@@ -1,4 +1,4 @@
-# Primary ALB SG: allow inbound 80 from anywhere, outbound all
+# Primary ALB SG
 resource "aws_security_group" "alb_primary_sg" {
   name        = "${var.project_name}-${var.env}-alb-primary-sg"
   description = "ALB SG for primary region"
@@ -22,7 +22,7 @@ resource "aws_security_group" "alb_primary_sg" {
   }
 }
 
-# Primary ECS SG: allow container_port only from the ALB SG, outbound all
+# Primary ECS SG
 resource "aws_security_group" "ecs_primary_sg" {
   name        = "${var.project_name}-${var.env}-ecs-primary-sg"
   description = "ECS tasks SG for primary region"

@@ -17,6 +17,11 @@ variable "env" {
   default = "prod"
 }
 
+variable "staging_env" {
+  type    = string
+  default = "staging"
+}
+
 variable "container_port" {
   type    = number
   default = 8080

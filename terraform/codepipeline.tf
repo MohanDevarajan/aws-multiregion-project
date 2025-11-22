@@ -1,13 +1,11 @@
 # -------------------------
-# CodeBuild project
+# CodeBuild projects
 # -------------------------
 resource "aws_codebuild_project" "build" {
   name         = "${var.project_name}-${var.env}-build"
   service_role = aws_iam_role.codebuild_role.arn
 
-  artifacts {
-    type = "NO_ARTIFACTS"
-  }
+  artifacts { type = "NO_ARTIFACTS" }
 
   environment {
     compute_type    = "BUILD_GENERAL1_SMALL"
@@ -19,18 +17,67 @@ resource "aws_codebuild_project" "build" {
       name  = "PRIMARY_REGION"
       value = var.primary_region
     }
+
     environment_variable {
       name  = "SECONDARY_REGION"
       value = var.secondary_region
     }
+
     environment_variable {
       name  = "PROJECT_NAME"
       value = var.project_name
     }
+
     environment_variable {
       name  = "ENV"
       value = var.env
     }
+
+    environment_variable {
+      name  = "CONTAINER_PORT"
+      value = tostring(var.container_port)
+    }
+  }
+
+  source {
+    type      = "GITHUB"
+    location  = "https://github.com/${var.github_owner}/${var.github_repo}.git"
+    buildspec = "ci/buildspec.yaml"
+  }
+}
+
+resource "aws_codebuild_project" "stage" {
+  name         = "${var.project_name}-${var.staging_env}-build"
+  service_role = aws_iam_role.codebuild_role.arn
+
+  artifacts { type = "NO_ARTIFACTS" }
+
+  environment {
+    compute_type    = "BUILD_GENERAL1_SMALL"
+    image           = "aws/codebuild/standard:7.0"
+    type            = "LINUX_CONTAINER"
+    privileged_mode = true
+
+    environment_variable {
+      name  = "PRIMARY_REGION"
+      value = var.primary_region
+    }
+
+    environment_variable {
+      name  = "SECONDARY_REGION"
+      value = var.secondary_region
+    }
+
+    environment_variable {
+      name  = "PROJECT_NAME"
+      value = var.project_name
+    }
+
+    environment_variable {
+      name  = "ENV"
+      value = var.staging_env
+    }
+
     environment_variable {
       name  = "CONTAINER_PORT"
       value = tostring(var.container_port)
@@ -45,13 +92,12 @@ resource "aws_codebuild_project" "build" {
 }
 
 # -------------------------
-# CodePipeline with GitHub v1 (OAuth token)
+# CodePipeline
 # -------------------------
 resource "aws_codepipeline" "pipeline" {
   name     = "${var.project_name}-${var.env}-pipeline"
   role_arn = aws_iam_role.codepipeline_role.arn
 
-  # Use the artifact bucket created in s3.tf
   artifact_store {
     location = aws_s3_bucket.artifact_primary.bucket
     type     = "S3"
@@ -79,7 +125,7 @@ resource "aws_codepipeline" "pipeline" {
   stage {
     name = "Build"
     action {
-      name            = "CodeBuild"
+      name            = "CodeBuildProd"
       category        = "Build"
       owner           = "AWS"
       provider        = "CodeBuild"
@@ -88,6 +134,22 @@ resource "aws_codepipeline" "pipeline" {
 
       configuration = {
         ProjectName = aws_codebuild_project.build.name
+      }
+    }
+  }
+
+  stage {
+    name = "Stage"
+    action {
+      name            = "DeployToStaging"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      version         = "1"
+      input_artifacts = ["source_out"]
+
+      configuration = {
+        ProjectName = aws_codebuild_project.stage.name
       }
     }
   }

@@ -4,7 +4,6 @@
 data "aws_iam_policy_document" "codebuild_assume" {
   statement {
     actions = ["sts:AssumeRole"]
-
     principals {
       type        = "Service"
       identifiers = ["codebuild.amazonaws.com"]
@@ -23,42 +22,42 @@ resource "aws_iam_role_policy" "codebuild_policy" {
   role = aws_iam_role.codebuild_role.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       # CloudWatch Logs
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
-        ]
-        Resource = [
-          "arn:${data.aws_partition.current.partition}:logs:${var.primary_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/*",
-          "arn:${data.aws_partition.current.partition}:logs:${var.primary_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/*:log-stream:*"
-        ]
+        ],
+        Resource = "*"
       },
 
       # S3 artifacts
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:GetBucketLocation",
           "s3:ListBucket"
-        ]
-        Resource = [
-          "arn:${data.aws_partition.current.partition}:s3:::${var.project_name}-${var.env}-artifacts-${var.primary_region}",
-          "arn:${data.aws_partition.current.partition}:s3:::${var.project_name}-${var.env}-artifacts-${var.primary_region}/*"
-        ]
+        ],
+        Resource = "*"
       },
 
-      # ECR full push/pull + metadata (Primary + Secondary)
+      # ECR login (account-wide)
       {
-        Effect = "Allow"
+        Effect   = "Allow",
+        Action   = ["ecr:GetAuthorizationToken"],
+        Resource = "*"
+      },
+
+      # ECR repo actions (Primary + Secondary repos)
+      {
+        Effect = "Allow",
         Action = [
-          "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:BatchGetImage",
           "ecr:BatchUploadLayerParts",
@@ -72,27 +71,30 @@ resource "aws_iam_role_policy" "codebuild_policy" {
           "ecr:PutImage",
           "ecr:CreateRepository",
           "ecr:SetRepositoryPolicy"
+        ],
+        Resource = [
+          "arn:aws:ecr:${var.primary_region}:${data.aws_caller_identity.current.account_id}:repository/*",
+          "arn:aws:ecr:${var.secondary_region}:${data.aws_caller_identity.current.account_id}:repository/*"
         ]
-        Resource = "*"
       },
 
       # ECS update
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "ecs:UpdateService",
           "ecs:DescribeServices",
           "ecs:RegisterTaskDefinition",
           "ecs:DescribeTaskDefinition",
           "ecs:DescribeClusters"
-        ]
+        ],
         Resource = "*"
       },
 
       # STS
       {
-        Effect = "Allow"
-        Action = ["sts:GetCallerIdentity"]
+        Effect   = "Allow",
+        Action   = ["sts:GetCallerIdentity"],
         Resource = "*"
       }
     ]
@@ -105,7 +107,6 @@ resource "aws_iam_role_policy" "codebuild_policy" {
 data "aws_iam_policy_document" "codepipeline_assume" {
   statement {
     actions = ["sts:AssumeRole"]
-
     principals {
       type        = "Service"
       identifiers = ["codepipeline.amazonaws.com"]
@@ -124,62 +125,57 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
   role = aws_iam_role.codepipeline_role.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
-      # S3 artifacts (primary bucket)
+      # S3 artifacts
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:GetBucketLocation",
           "s3:ListBucket"
-        ]
-        Resource = [
-          "arn:${data.aws_partition.current.partition}:s3:::${var.project_name}-${var.env}-artifacts-${var.primary_region}",
-          "arn:${data.aws_partition.current.partition}:s3:::${var.project_name}-${var.env}-artifacts-${var.primary_region}/*"
-        ]
+        ],
+        Resource = "*"
       },
 
       # CodeBuild control
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "codebuild:BatchGetBuilds",
           "codebuild:StartBuild",
           "codebuild:StopBuild",
           "codebuild:BatchGetProjects",
           "codebuild:ListBuildsForProject"
-        ]
+        ],
         Resource = "*"
       },
 
       # ECS deploy
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "ecs:UpdateService",
           "ecs:DescribeServices",
           "ecs:RegisterTaskDefinition",
           "ecs:DescribeTaskDefinition",
           "ecs:DescribeClusters"
-        ]
+        ],
         Resource = "*"
       },
 
-      # SNS for approval notifications (*** Fixes Your Error ***)
+      # SNS for approval notifications
       {
-        Effect = "Allow"
-        Action = [
-          "sns:Publish"
-        ]
+        Effect   = "Allow",
+        Action   = ["sns:Publish"],
         Resource = "*"
       },
 
       # Pass roles
       {
-        Effect = "Allow"
-        Action = "iam:PassRole"
+        Effect = "Allow",
+        Action = "iam:PassRole",
         Resource = [
           aws_iam_role.codebuild_role.arn,
           var.ecs_task_execution_role_arn,
@@ -196,7 +192,6 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 data "aws_iam_policy_document" "ecs_task_assume" {
   statement {
     actions = ["sts:AssumeRole"]
-
     principals {
       type        = "Service"
       identifiers = ["ecs-tasks.amazonaws.com"]
@@ -211,5 +206,5 @@ resource "aws_iam_role" "ecs_task_role" {
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   role       = aws_iam_role.ecs_task_role.name
-  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
