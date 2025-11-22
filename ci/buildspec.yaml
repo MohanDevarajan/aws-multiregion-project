@@ -1,4 +1,5 @@
 version: 0.2
+
 env:
   shell: bash
   variables:
@@ -10,7 +11,7 @@ phases:
       - "echo Starting build in $AWS_DEFAULT_REGION"
       - "echo Logging into ECR primary region: $PRIMARY_REGION"
       - "aws ecr get-login-password --region $PRIMARY_REGION | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.$PRIMARY_REGION.amazonaws.com"
-      - "echo Ensuring ECR repos exist (Terraform created them)"
+      - 'echo Ensuring ECR repos exist (Terraform created them)'
 
   build:
     commands:
