@@ -1,5 +1,2 @@
-<<<<<<< HEAD
 source >> build >> manual approval >> stage [ Completed ]
-=======
-working with source
->>>>>>> 35c7ec8888a10ff019187b576907f12dd700019d
+source >> build >> stage >> manual approval >> prod [ Completed ]
