@@ -1,7 +1,4 @@
 version: 0.2
-env:
-  variables:
-    IMAGE_TAG: latest
 
 phases:
   install:
@@ -10,23 +7,15 @@ phases:
 
   pre_build:
     commands:
-      - "echo Starting build in $AWS_DEFAULT_REGION"
-      - "echo Logging into ECR (primary: $PRIMARY_REGION)..."
-      - "aws ecr get-login-password --region $PRIMARY_REGION | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.$PRIMARY_REGION.amazonaws.com"
-      - "echo Ensuring ECR repos exist (Terraform created them)"
+      - echo "Hello from pre_build"
 
   build:
     commands:
-      - "echo Building image..."
-      - "docker build -t app:$IMAGE_TAG ./app"
-      - "bash -c 'PRIMARY_REPO_URL=$(aws ecr describe-repositories --region $PRIMARY_REGION --repository-names ${PROJECT_NAME}-${ENV} --query repositories[0].repositoryUri --output text) && echo Primary repo: $PRIMARY_REPO_URL && docker tag app:$IMAGE_TAG $PRIMARY_REPO_URL:$IMAGE_TAG && docker push $PRIMARY_REPO_URL:$IMAGE_TAG'"
-      - "bash -c 'SECONDARY_REPO_URL=$(aws ecr describe-repositories --region $SECONDARY_REGION --repository-names ${PROJECT_NAME}-${ENV} --query repositories[0].repositoryUri --output text) && echo Secondary repo: $SECONDARY_REPO_URL && aws ecr get-login-password --region $SECONDARY_REGION | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.$SECONDARY_REGION.amazonaws.com && docker tag app:$IMAGE_TAG $SECONDARY_REPO_URL:$IMAGE_TAG && docker push $SECONDARY_REPO_URL:$IMAGE_TAG'"
+      - echo "Hello from build"
 
   post_build:
     commands:
-      - "echo Forcing new ECS deployments in both regions..."
-      - "aws ecs update-service --region $PRIMARY_REGION --cluster ${PROJECT_NAME}-${ENV}-cluster-primary --service ${PROJECT_NAME}-${ENV}-svc-primary --force-new-deployment"
-      - "aws ecs update-service --region $SECONDARY_REGION --cluster ${PROJECT_NAME}-${ENV}-cluster-secondary --service ${PROJECT_NAME}-${ENV}-svc-secondary --force-new-deployment"
+      - echo "Hello from post_build"
 
 artifacts:
   files:
