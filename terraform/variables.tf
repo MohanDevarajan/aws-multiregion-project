@@ -24,7 +24,7 @@ variable "staging_env" {
 
 variable "container_port" {
   type    = number
-  default = 8080
+  default = 80
 }
 
 variable "desired_count" {
